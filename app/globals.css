@@ -84,19 +84,16 @@ img { max-width: 100%; }
 
 /* ----------------------------------------------------------------- type */
 
-.h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.018em; line-height: 1.25; }
-.h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.012em; }
-.h3 { font-size: 15px; font-weight: 600; }
-.lead { font-size: 15px; color: var(--fg-2); }
+.h1 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; }
+.h2 { font-size: 16px; font-weight: 700; letter-spacing: -0.006em; }
+.h3 { font-size: 14.5px; font-weight: 600; }
+.lead { font-size: 14px; color: var(--fg-2); }
 .muted { color: var(--fg-3); }
 .dim { color: var(--fg-2); }
 .small { font-size: 13.5px; }
 .tiny { font-size: 12px; }
 .num { font-variant-numeric: tabular-nums; }
-.eyebrow {
-  font-size: 11px; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--fg-3);
-}
+.eyebrow { font-size: 12.5px; font-weight: 600; color: var(--fg-3); }
 
 /* ---------------------------------------------------------------- shell */
 
@@ -159,13 +156,12 @@ img { max-width: 100%; }
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  padding: 18px;
-  box-shadow: var(--shadow);
+  padding: 16px;
 }
 .card-tight { padding: 14px; }
 .card-plat { box-shadow: none; }
 .card-link { display: block; transition: box-shadow .15s ease, transform .15s ease; }
-.card-link:hover { box-shadow: var(--shadow-2); }
+.card-link:hover { border-color: var(--line-2); }
 
 .row { display: flex; align-items: center; gap: 10px; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
@@ -186,19 +182,24 @@ img { max-width: 100%; }
 .cours-cover {
   position: relative;
   aspect-ratio: 16 / 9;
-  background: linear-gradient(135deg, #24262c 0%, #121316 100%);
-  display: grid; place-items: center;
+  background: #1b1c20;
+  display: block;
   overflow: hidden;
 }
+.cours-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cours-cover .titre {
-  font-size: clamp(20px, 3.6vw, 30px); font-weight: 800; letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.92); text-align: center; padding: 0 14px;
-  text-transform: uppercase;
+  position: absolute; left: 14px; right: 14px; bottom: 12px;
+  font-size: 16px; font-weight: 700; letter-spacing: -0.01em;
+  color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.55);
 }
 .cours-cover .num {
   position: absolute; top: 10px; left: 12px;
-  font-size: 12px; font-weight: 800; letter-spacing: .1em;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: 12px; font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+.cours-cover::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.6) 0%, rgba(0,0,0,0) 55%);
 }
 .cours-cover .voile { position: absolute; inset: 0; background: rgba(12, 12, 14, 0.5); }
 .cours-cover .cadenas {
@@ -213,7 +214,7 @@ img { max-width: 100%; }
 .cours-titre .pill { flex: none; }
 .cours.verrouille .cours-corps { opacity: .62; }
 
-.jauge { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.jauge { height: 5px; background: var(--line); border-radius: 99px; overflow: hidden; }
 .jauge > span { display: block; height: 100%; background: var(--red); border-radius: 99px; transition: width .35s ease; }
 .jauge-txt { font-size: 11.5px; font-weight: 700; color: var(--fg-2); }
 
