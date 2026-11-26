@@ -3,25 +3,43 @@ import { notFound, redirect } from "next/navigation";
 import Shell from "../../_components/Shell";
 import { toggleLessonAction } from "../../actions";
 import { requireActive } from "@/lib/guard";
-import { getProgress, listProofs } from "@/lib/store";
+import { getProgress, listProofs, getVideos } from "@/lib/store";
 import { buildState, formatDuree } from "@/lib/progress";
 import { moduleByNumber, partOf, lessonId } from "@/lib/content";
+import { parseVideo } from "@/lib/videos";
 
 export const dynamic = "force-dynamic";
 
-export default async function ModulePage({ params }) {
+export default async function ModulePage({ params, searchParams }) {
   const { n } = await params;
+  const sp = await searchParams;
   const mod = moduleByNumber(n);
   if (!mod) notFound();
 
   const { user, badge } = await requireActive();
-  const [progress, proofs] = await Promise.all([getProgress(user.id), listProofs()]);
+  const [progress, proofs, videos] = await Promise.all([getProgress(user.id), listProofs(), getVideos()]);
   const mine = proofs.filter((p) => p.userId === user.id);
   const state = buildState(progress.done, mine);
   const row = state.rows.find((r) => r.n === mod.n);
   if (!row.ouvert) redirect("/parcours");
 
   const part = partOf(mod);
+  const index = sp?.l !== undefined ? Number(sp.l) : null;
+
+  if (index !== null && mod.lessons[index]) {
+    return (
+      <Shell user={user} badge={badge}>
+        <Lecon
+          mod={mod}
+          index={index}
+          lesson={mod.lessons[index]}
+          fait={state.done.has(lessonId(mod.n, index))}
+          videos={videos}
+        />
+      </Shell>
+    );
+  }
+
   const preuves = mine.filter((p) => Number(p.moduleNumber) === mod.n);
   const suivant = state.rows.find((r) => r.n === mod.n + 1);
 
@@ -52,20 +70,32 @@ export default async function ModulePage({ params }) {
         {mod.lessons.map((l, i) => {
           const key = lessonId(mod.n, i);
           const fait = state.done.has(key);
+          const video = parseVideo(videos[key]);
           return (
-            <form key={key} action={toggleLessonAction}>
-              <input type="hidden" name="key" value={key} />
-              <button className="check" type="submit" aria-pressed={fait}>
-                <span className={`box ${fait ? "box-on" : ""}`} aria-hidden="true">{fait ? "✓" : ""}</span>
-                <span className="stack gap-4" style={{ flex: 1, minWidth: 0 }}>
-                  <span className="row-between" style={{ gap: 10 }}>
-                    <span className="h3" style={{ color: fait ? "var(--fg-muted)" : "var(--fg)" }}>{l.t}</span>
-                    <span className="tiny muted num" style={{ flex: "none" }}>{formatDuree(l.min)}</span>
+            <div key={key} className="lecon-ligne">
+              <form action={toggleLessonAction}>
+                <input type="hidden" name="key" value={key} />
+                <button
+                  className={`box ${fait ? "box-on" : ""}`}
+                  type="submit"
+                  aria-pressed={fait}
+                  aria-label={fait ? "Marquer comme non vue" : "Marquer comme vue"}
+                >
+                  {fait ? "✓" : ""}
+                </button>
+              </form>
+
+              <Link href={`/parcours/${mod.n}?l=${i}`} className="lecon-lien">
+                <span className="row-between" style={{ gap: 10 }}>
+                  <span className="h3" style={{ color: fait ? "var(--fg-muted)" : "var(--fg)" }}>{l.t}</span>
+                  <span className="row" style={{ gap: 8, flex: "none" }}>
+                    {video ? <span className="pill pill-red">Vidéo</span> : <span className="pill">Bientôt</span>}
+                    <span className="tiny muted num">{formatDuree(l.min)}</span>
                   </span>
-                  <span className="small muted">{l.d}</span>
                 </span>
-              </button>
-            </form>
+                <span className="small muted">{l.d}</span>
+              </Link>
+            </div>
           );
         })}
       </section>
@@ -106,6 +136,69 @@ export default async function ModulePage({ params }) {
         ) : null}
       </div>
     </Shell>
+  );
+}
+
+function Lecon({ mod, index, lesson, fait, videos }) {
+  const key = lessonId(mod.n, index);
+  const video = parseVideo(videos[key]);
+  const precedent = index > 0 ? index - 1 : null;
+  const suivant = index + 1 < mod.lessons.length ? index + 1 : null;
+
+  return (
+    <>
+      <Link href={`/parcours/${mod.n}`} className="small muted" style={{ display: "inline-block", marginBottom: 20 }}>
+        ← {mod.title}
+      </Link>
+
+      <div className="page-head">
+        <div className="row">
+          <span className="display" style={{ fontSize: 13 }}>
+            Leçon {String(mod.n).padStart(2, "0")}.{index + 1}
+          </span>
+          <span className="tiny muted">· {formatDuree(lesson.min)}</span>
+        </div>
+        <h1 className="h1">{lesson.t}</h1>
+        <p className="dim small" style={{ maxWidth: 620 }}>{lesson.d}</p>
+      </div>
+
+      {video ? (
+        <div className="video-cadre">
+          <iframe
+            src={video.src}
+            title={lesson.t}
+            allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+            allowFullScreen
+            loading="lazy"
+          />
+        </div>
+      ) : (
+        <div className="card video-vide">
+          <span className="eyebrow">Vidéo à venir</span>
+          <p className="small muted" style={{ marginTop: 8, maxWidth: 420 }}>
+            Cette leçon n'a pas encore été tournée. Tu peux déjà cocher ce que tu maîtrises et passer à la suite.
+          </p>
+        </div>
+      )}
+
+      <div className="row-between" style={{ marginTop: 24 }}>
+        <form action={toggleLessonAction}>
+          <input type="hidden" name="key" value={key} />
+          <button className={`btn ${fait ? "btn-ghost" : "btn-primary"}`} type="submit">
+            {fait ? "✓ Marquée comme vue" : "Marquer comme vue"}
+          </button>
+        </form>
+
+        <div className="row" style={{ gap: 8 }}>
+          {precedent !== null ? (
+            <Link className="btn btn-ghost btn-sm" href={`/parcours/${mod.n}?l=${precedent}`}>← Précédente</Link>
+          ) : null}
+          {suivant !== null ? (
+            <Link className="btn btn-ghost btn-sm" href={`/parcours/${mod.n}?l=${suivant}`}>Suivante →</Link>
+          ) : null}
+        </div>
+      </div>
+    </>
   );
 }
 
