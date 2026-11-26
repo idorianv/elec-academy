@@ -1,50 +1,46 @@
 import Link from "next/link";
 import Shell from "../_components/Shell";
 import { requireActive } from "@/lib/guard";
-import { getProgress, listProofs } from "@/lib/store";
+import { getProgress, listProofs, getVideos } from "@/lib/store";
 import { buildState, minutesRestantes, formatDuree } from "@/lib/progress";
-import { PARTS } from "@/lib/content";
+import { PARTS, lessonId } from "@/lib/content";
+import { parseVideo } from "@/lib/videos";
 
 export const dynamic = "force-dynamic";
 
 export default async function Parcours() {
   const { user, badge } = await requireActive();
-  const [progress, proofs] = await Promise.all([getProgress(user.id), listProofs()]);
+  const [progress, proofs, videos] = await Promise.all([getProgress(user.id), listProofs(), getVideos()]);
   const mine = proofs.filter((p) => p.userId === user.id);
   const state = buildState(progress.done, mine);
   const reste = minutesRestantes(state.rows, state.done);
 
   return (
     <Shell user={user} badge={badge}>
-      <div className="page-head">
-        <span className="eyebrow">De apprenti à entrepreneur respecté</span>
-        <h1 className="h1">Ton parcours</h1>
-        <p className="dim small" style={{ maxWidth: 560 }}>
-          11 modules, 4 étapes. On passe à la suite quand c'est acquis, pas au bout de sept jours.
-        </p>
-      </div>
-
-      <div className="card stack gap-16" style={{ marginBottom: 32 }}>
-        <div className="row-between">
-          <div className="stack gap-4">
-            <span className="eyebrow">Avancement</span>
-            <span className="h2 num">
-              {state.totalFaites} <span className="muted" style={{ fontWeight: 400 }}>/ {state.totalLecons} leçons</span>
-            </span>
+      <div className="card" style={{ marginBottom: 22 }}>
+        <div className="row-between" style={{ alignItems: "flex-start" }}>
+          <div className="stack gap-4" style={{ minWidth: 0 }}>
+            <span className="eyebrow">De apprenti à entrepreneur respecté</span>
+            <h1 className="h1">Ta formation</h1>
+            <p className="lead" style={{ maxWidth: 520 }}>
+              11 modules, 4 étapes. On passe à la suite quand c'est acquis.
+            </p>
           </div>
-          <div className="stack gap-4" style={{ textAlign: "right" }}>
-            <span className="eyebrow">Il te reste</span>
-            <span className="h2 num">{formatDuree(reste)}</span>
-          </div>
-        </div>
-        <div className="bar"><span style={{ width: `${state.pct}%` }} /></div>
-        <div className="row-between">
-          <span className="tiny muted">{state.pct} % du parcours</span>
           {state.courant ? (
-            <Link className="btn btn-primary btn-sm" href={`/parcours/${state.courant.n}`}>
+            <Link className="btn btn-primary" href={`/parcours/${state.courant.n}`}>
               Reprendre au module {state.courant.n}
             </Link>
           ) : null}
+        </div>
+
+        <div className="stack gap-8" style={{ marginTop: 18 }}>
+          <div className="row-between">
+            <span className="small dim num">
+              <strong>{state.totalFaites}</strong> / {state.totalLecons} leçons terminées
+            </span>
+            <span className="small muted num">Il te reste {formatDuree(reste)}</span>
+          </div>
+          <div className="jauge"><span style={{ width: `${state.pct}%` }} /></div>
         </div>
       </div>
 
@@ -54,18 +50,13 @@ export default async function Parcours() {
           return (
             <section key={part.id} className="stack gap-12">
               <div className="stack gap-4">
-                <div className="row">
-                  <span className="display" style={{ fontSize: 13 }}>Partie {part.index}</span>
-                  <span className="tiny muted">· {part.tagline}</span>
-                </div>
+                <span className="eyebrow">Partie {part.index} · {part.tagline}</span>
                 <h2 className="h2">{part.name}</h2>
-                <p className="small muted" style={{ maxWidth: 620 }}>{part.goal}</p>
+                <p className="small muted" style={{ maxWidth: 640 }}>{part.goal}</p>
               </div>
 
-              <div className="stack gap-8">
-                {rows.map((m) => (
-                  <ModuleRow key={m.n} m={m} />
-                ))}
+              <div className="grid grid-3">
+                {rows.map((m) => <CarteModule key={m.n} m={m} videos={videos} />)}
               </div>
             </section>
           );
@@ -75,50 +66,40 @@ export default async function Parcours() {
   );
 }
 
-function ModuleRow({ m }) {
-  const body = (
-    <div className="stack gap-12">
-      <div className="row-between" style={{ alignItems: "flex-start" }}>
-        <div className="row" style={{ alignItems: "flex-start", gap: 12, minWidth: 0 }}>
-          <span className={`modnum ${m.ouvert && !m.complet ? "modnum-on" : ""}`}>
-            {String(m.n).padStart(2, "0")}
-          </span>
-          <div className="stack gap-4" style={{ minWidth: 0 }}>
-            <span className="h3">{m.title}</span>
-            <span className="small muted">{m.summary}</span>
-          </div>
-        </div>
-        <Statut m={m} />
+function CarteModule({ m, videos }) {
+  const videosPretes = m.lessons.filter((_, i) => parseVideo(videos[lessonId(m.n, i)])).length;
+
+  const contenu = (
+    <>
+      <div className="cours-cover">
+        <span className="num">MODULE {String(m.n).padStart(2, "0")}</span>
+        {!m.ouvert ? <span className="voile" /> : null}
+        <span className="titre">{m.title}</span>
+        {!m.ouvert ? <span className="cadenas" aria-label="Verrouillé">🔒</span> : null}
       </div>
-
-      {m.ouvert ? (
-        <div className="row" style={{ gap: 12 }}>
-          <div className="bar" style={{ flex: 1 }}><span style={{ width: `${m.pct}%` }} /></div>
-          <span className="tiny muted num" style={{ minWidth: 54, textAlign: "right" }}>
-            {m.faites}/{m.total}
-          </span>
+      <div className="cours-corps">
+        <div className="cours-titre">
+          <span className="h3">{String(m.n).padStart(2, "0")} — {m.title}</span>
+          <Etat m={m} />
         </div>
-      ) : null}
-
-      {m.enAttenteDeValidation ? (
-        <p className="note note-warn">
-          Leçons terminées. Il manque la preuve de chantier : {m.requiertPreuve}
-        </p>
-      ) : null}
-    </div>
+        <p className="small muted" style={{ flex: 1 }}>{m.summary}</p>
+        <div className="row" style={{ gap: 10 }}>
+          <div className="jauge" style={{ flex: 1 }}><span style={{ width: `${m.ouvert ? m.pct : 0}%` }} /></div>
+          <span className="jauge-txt num">{m.ouvert ? `${m.pct} %` : "—"}</span>
+        </div>
+        <span className="tiny muted">
+          {m.lessons.length} leçon{m.lessons.length > 1 ? "s" : ""}
+          {videosPretes ? ` · ${videosPretes} en vidéo` : " · vidéos à venir"}
+        </span>
+      </div>
+    </>
   );
 
-  if (!m.ouvert) {
-    return <div className="card card-tight" style={{ opacity: 0.45 }}>{body}</div>;
-  }
-  return (
-    <Link className="card card-tight card-link" href={`/parcours/${m.n}`}>
-      {body}
-    </Link>
-  );
+  if (!m.ouvert) return <div className="card cours verrouille">{contenu}</div>;
+  return <Link className="card cours card-link" href={`/parcours/${m.n}`}>{contenu}</Link>;
 }
 
-function Statut({ m }) {
+function Etat({ m }) {
   if (m.complet) return <span className="pill pill-green">Validé</span>;
   if (m.enAttenteDeValidation) return <span className="pill pill-amber">Preuve attendue</span>;
   if (!m.ouvert) return <span className="pill">Verrouillé</span>;
