@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Shell from "../_components/Shell";
+import Vignette from "../_components/Vignette";
+import Tete from "../_components/Tete";
 import { requireActive } from "@/lib/guard";
-import { getProgress, listProofs, getVideos } from "@/lib/store";
+import { getProgress, listProofs, getVideos, listPosts, listUsers } from "@/lib/store";
 import { buildState, minutesRestantes, formatDuree } from "@/lib/progress";
 import { PARTS, lessonId } from "@/lib/content";
 import { parseVideo } from "@/lib/videos";
@@ -37,7 +39,10 @@ function faitDuJour(state, mesPreuves, suite) {
 
 export default async function Parcours() {
   const { user, badge } = await requireActive();
-  const [progress, proofs, videos] = await Promise.all([getProgress(user.id), listProofs(), getVideos()]);
+  const [progress, proofs, videos, posts, users] = await Promise.all([
+    getProgress(user.id), listProofs(), getVideos(), listPosts(), listUsers(),
+  ]);
+  const actifs = users.filter((u) => u.statut === "actif");
   const mine = proofs.filter((p) => p.userId === user.id);
   const state = buildState(progress.done, mine);
   const reste = minutesRestantes(state.rows, state.done);
@@ -63,15 +68,18 @@ export default async function Parcours() {
           </div>
         </header>
 
-        <section className="c8 card reprendre" style={{ alignSelf: "stretch" }}>
+        <section className="c8 card reprendre">
           {suite ? (
             <>
-              <div className="stack gap-10">
-                <span className="ou num">
-                  Module {String(suite.mod.n).padStart(2, "0")} · leçon {suite.index + 1} sur {suite.mod.lessons.length}
-                </span>
-                <h2 className="quoi">{suite.lesson.t}</h2>
-                <p className="dim small" style={{ maxWidth: "46ch" }}>{suite.lesson.d}</p>
+              <div className="reprendre-tete">
+                <Vignette photo={videos[`couverture.${suite.mod.n}`]} module={suite.mod.n} titre={suite.mod.title} />
+                <div className="stack gap-10">
+                  <span className="ou num">
+                    Module {String(suite.mod.n).padStart(2, "0")} · leçon {suite.index + 1} sur {suite.mod.lessons.length}
+                  </span>
+                  <h2 className="quoi">{suite.lesson.t}</h2>
+                  <p className="dim small">{suite.lesson.d}</p>
+                </div>
               </div>
 
               <div className="stack gap-6">
@@ -93,7 +101,7 @@ export default async function Parcours() {
                 ) : null}
               </div>
 
-              <div className="row" style={{ gap: 14 }}>
+              <div className="row reprendre-pied" style={{ gap: 14 }}>
                 <Link className="btn btn-primary" href={`/parcours/${suite.mod.n}?l=${suite.index}`}>
                   Reprendre la leçon
                 </Link>
@@ -117,41 +125,73 @@ export default async function Parcours() {
           )}
         </section>
 
-        <section className="c4 card stack gap-16" style={{ alignSelf: "stretch", minHeight: 196 }} aria-labelledby="t-chantiers">
-          <h2 className="h2" id="t-chantiers">Tes chantiers</h2>
+        <div className="c4 stack gap-16">
+          <section className="card card-tight stack gap-14" aria-labelledby="t-chantiers">
+            <h2 className="h2" id="t-chantiers">Tes chantiers</h2>
 
-          {mine.length === 0 ? (
-            <p className="empty">
-              Aucune photo envoyée. Les modules 2 et 7 en demandent une pour s'ouvrir.
-            </p>
-          ) : (
-            <>
-              <div className="mur">
-                {mine.slice(0, 3).map((p) => (
-                  <article key={p.id} className="chantier">
-                    <span className={`marque marque-${p.statut === "valide" ? "valide" : p.statut === "a_revoir" ? "revoir" : "attente"}`} aria-hidden="true" />
-                    <span className="stack gap-4" style={{ minWidth: 0 }}>
-                      <span className="small" style={{ fontWeight: 500 }}>{p.titre}</span>
-                      <span className="tiny muted">
-                        {p.statut === "valide" ? "Validé par Emre" : p.statut === "a_revoir" ? "À revoir" : "En attente de correction"}
-                        {p.moduleNumber ? ` · module ${p.moduleNumber}` : ""}
+            {mine.length === 0 ? (
+              <p className="empty">Aucune photo envoyée. Les modules 2 et 7 en demandent une pour s'ouvrir.</p>
+            ) : (
+              <>
+                <div className="mur">
+                  {mine.slice(0, 3).map((p) => (
+                    <article key={p.id} className="chantier">
+                      <span className={`marque marque-${p.statut === "valide" ? "valide" : p.statut === "a_revoir" ? "revoir" : "attente"}`} aria-hidden="true" />
+                      <span className="stack gap-4" style={{ minWidth: 0 }}>
+                        <span className="small" style={{ fontWeight: 500 }}>{p.titre}</span>
+                        <span className="tiny muted">
+                          {p.statut === "valide" ? "Validé par Emre" : p.statut === "a_revoir" ? "À revoir" : "En attente de correction"}
+                          {p.moduleNumber ? ` · module ${p.moduleNumber}` : ""}
+                        </span>
                       </span>
+                    </article>
+                  ))}
+                </div>
+                <div className="mur-legende">
+                  <span><i className="marque marque-valide" />Validé</span>
+                  <span><i className="marque marque-attente" />En attente</span>
+                  <span><i className="marque marque-revoir" />À revoir</span>
+                </div>
+              </>
+            )}
+
+            <Link className="btn btn-sm btn-block" href="/chantiers">Envoyer une photo</Link>
+          </section>
+
+          <section className="card card-tight stack gap-12" aria-labelledby="t-commu">
+            <div className="row-between" style={{ alignItems: "center" }}>
+              <h2 className="h2" id="t-commu">Dans la communauté</h2>
+              {actifs.length ? (
+                <span className="tete-pile" aria-label={`${actifs.length} apprentis`}>
+                  {actifs.slice(0, 4).map((u) => <Tete key={u.id} nom={u.prenom} petite />)}
+                </span>
+              ) : null}
+            </div>
+
+            {posts.length === 0 ? (
+              <p className="empty">Personne n'a encore posé de question. Tu peux être le premier.</p>
+            ) : (
+              <div className="fil">
+                {posts.slice(0, 2).map((p) => (
+                  <Link key={p.id} href="/communaute" className="fil-item">
+                    <Tete nom={p.prenom} petite admin={p.prenom === "Emre"} />
+                    <span className="stack gap-4" style={{ minWidth: 0 }}>
+                      <span className="tiny muted">
+                        {p.prenom}
+                        {p.replies?.length ? ` · ${p.replies.length} réponse${p.replies.length > 1 ? "s" : ""}` : " · pas encore de réponse"}
+                      </span>
+                      <span className="corps">{p.body}</span>
                     </span>
-                  </article>
+                  </Link>
                 ))}
               </div>
-              <div className="mur-legende">
-                <span><i className="marque marque-valide" />Validé</span>
-                <span><i className="marque marque-attente" />En attente</span>
-                <span><i className="marque marque-revoir" />À revoir</span>
-              </div>
-            </>
-          )}
+            )}
 
-          <Link className="btn btn-sm btn-block" href="/chantiers" style={{ marginTop: "auto" }}>
-            Envoyer une photo
-          </Link>
-        </section>
+            <Link className="btn btn-sm btn-block" href="/communaute">
+              Ouvrir la communauté
+            </Link>
+          </section>
+        </div>
 
         <div className="c12 stack gap-32">
           {PARTS.map((part) => {
@@ -185,7 +225,7 @@ function CarteModule({ m, videos }) {
 
   const contenu = (
     <>
-      {couverture ? <img className="cours-photo" src={couverture} alt="" loading="lazy" /> : null}
+      <Vignette photo={couverture} module={m.n} titre={m.title} />
       <div className="cours-tete">
         <span className="cours-num">Module {String(m.n).padStart(2, "0")}</span>
         <Etat m={m} />
