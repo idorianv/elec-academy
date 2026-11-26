@@ -17,32 +17,21 @@ export default async function Parcours() {
 
   return (
     <Shell user={user} badge={badge}>
-      <div className="card" style={{ marginBottom: 22 }}>
-        <div className="row-between" style={{ alignItems: "flex-start" }}>
-          <div className="stack gap-4" style={{ minWidth: 0 }}>
-            <span className="eyebrow">De apprenti à entrepreneur respecté</span>
-            <h1 className="h1">Ta formation</h1>
-            <p className="lead" style={{ maxWidth: 520 }}>
-              11 modules, 4 étapes. On passe à la suite quand c'est acquis.
-            </p>
-          </div>
-          {state.courant ? (
-            <Link className="btn btn-primary" href={`/parcours/${state.courant.n}`}>
-              Reprendre au module {state.courant.n}
-            </Link>
-          ) : null}
+      <div className="row-between" style={{ marginBottom: 18, alignItems: "flex-end" }}>
+        <div className="stack gap-4" style={{ minWidth: 0 }}>
+          <h1 className="h1">Formation</h1>
+          <span className="small muted num">
+            {state.totalFaites} / {state.totalLecons} leçons · il te reste {formatDuree(reste)}
+          </span>
         </div>
-
-        <div className="stack gap-8" style={{ marginTop: 18 }}>
-          <div className="row-between">
-            <span className="small dim num">
-              <strong>{state.totalFaites}</strong> / {state.totalLecons} leçons terminées
-            </span>
-            <span className="small muted num">Il te reste {formatDuree(reste)}</span>
-          </div>
-          <div className="jauge"><span style={{ width: `${state.pct}%` }} /></div>
-        </div>
+        {state.courant ? (
+          <Link className="btn btn-sm" href={`/parcours/${state.courant.n}`}>
+            Reprendre au module {state.courant.n}
+          </Link>
+        ) : null}
       </div>
+
+      <div className="jauge" style={{ marginBottom: 26 }}><span style={{ width: `${state.pct}%` }} /></div>
 
       <div className="stack gap-32">
         {PARTS.map((part) => {
@@ -50,8 +39,7 @@ export default async function Parcours() {
           return (
             <section key={part.id} className="stack gap-12">
               <div className="stack gap-4">
-                <span className="eyebrow">Partie {part.index} · {part.tagline}</span>
-                <h2 className="h2">{part.name}</h2>
+                <h2 className="h2">Partie {part.index} — {part.name}</h2>
                 <p className="small muted" style={{ maxWidth: 640 }}>{part.goal}</p>
               </div>
 
@@ -68,11 +56,13 @@ export default async function Parcours() {
 
 function CarteModule({ m, videos }) {
   const videosPretes = m.lessons.filter((_, i) => parseVideo(videos[lessonId(m.n, i)])).length;
+  const couverture = videos[`couverture.${m.n}`];
 
   const contenu = (
     <>
       <div className="cours-cover">
-        <span className="num">MODULE {String(m.n).padStart(2, "0")}</span>
+        {couverture ? <img src={couverture} alt="" loading="lazy" /> : null}
+        <span className="num">Module {String(m.n).padStart(2, "0")}</span>
         {!m.ouvert ? <span className="voile" /> : null}
         <span className="titre">{m.title}</span>
         {!m.ouvert ? <span className="cadenas" aria-label="Verrouillé">🔒</span> : null}
