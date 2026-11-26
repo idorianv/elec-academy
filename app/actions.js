@@ -61,6 +61,15 @@ export async function toggleLessonAction(formData) {
   revalidatePath("/parcours", "layout");
 }
 
+/** Bascule une leçon depuis le composant client (retour visuel immédiat). */
+export async function toggleLessonById(key) {
+  const user = await currentUser();
+  if (!user || user.statut !== "actif") return;
+  if (!key) return;
+  await toggleLesson(user.id, String(key));
+  revalidatePath("/parcours", "layout");
+}
+
 export async function postAction(formData) {
   const user = await currentUser();
   if (!user || user.statut !== "actif") return;
