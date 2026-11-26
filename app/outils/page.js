@@ -10,7 +10,6 @@ export default async function Outils() {
   return (
     <Shell user={user} badge={badge}>
       <div className="page-head">
-        <span className="eyebrow">Boîte à outils</span>
         <h1 className="h1">Calculs de chantier</h1>
         <p className="dim small" style={{ maxWidth: 580 }}>
           Les quatre calculs qu'on refait tout le temps, utilisables d'une main sur le téléphone. Tu peux revenir ici
