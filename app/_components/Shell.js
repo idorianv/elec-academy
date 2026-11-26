@@ -3,73 +3,57 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const LINKS = [
-  { href: "/parcours", label: "Parcours", short: "Parcours" },
-  { href: "/chantiers", label: "Mes chantiers", short: "Chantiers" },
-  { href: "/communaute", label: "Communauté", short: "Commu" },
-  { href: "/outils", label: "Outils", short: "Outils" },
+const LIENS = [
+  { href: "/parcours", label: "Formation" },
+  { href: "/chantiers", label: "Mes chantiers" },
+  { href: "/communaute", label: "Communauté" },
+  { href: "/outils", label: "Outils" },
 ];
 
 export default function Shell({ user, children, badge }) {
   const path = usePathname();
-  const isOn = (href) => path === href || path.startsWith(href + "/");
-  const links = user?.role === "admin" ? [...LINKS, { href: "/admin", label: "Administration", short: "Admin" }] : LINKS;
+  const actif = (href) => path === href || path.startsWith(href + "/");
+  const liens = user?.role === "admin" ? [...LIENS, { href: "/admin", label: "Administration" }] : LIENS;
+  const initiales = (user?.prenom || "?").slice(0, 2).toUpperCase();
 
   return (
-    <div className="shell">
-      <aside className="sidebar">
-        <Link href="/parcours" className="brand">
-          <span className="brand-bar" aria-hidden="true" />
-          <span>
-            <span className="brand-name">Elec Academy</span>
-            <span className="brand-sub">Par Emre · Emrelec</span>
-          </span>
-        </Link>
+    <>
+      <header className="topbar">
+        <div className="topbar-in">
+          <Link href="/parcours" className="brand">
+            <span className="brand-tile" aria-hidden="true">EA</span>
+            <span>
+              <span className="brand-name">Elec Academy</span>
+              <span className="brand-sub">Par Emre · Emrelec</span>
+            </span>
+          </Link>
 
-        <nav className="nav">
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} data-active={isOn(l.href)}>
-              <span>{l.label}</span>
+          <div className="row" style={{ gap: 10 }}>
+            <span className="tiny muted" style={{ textAlign: "right", lineHeight: 1.25 }}>
+              {user?.prenom}
+              <br />
+              {user?.role === "admin" ? "Administrateur" : "Apprenti"}
+            </span>
+            <span className="avatar" aria-hidden="true">{initiales}</span>
+            <form action="/api/deconnexion" method="post">
+              <button className="btn btn-sm" type="submit">Quitter</button>
+            </form>
+          </div>
+        </div>
+      </header>
+
+      <nav className="tabs">
+        <div className="tabs-in">
+          {liens.map((l) => (
+            <Link key={l.href} href={l.href} data-active={actif(l.href)}>
+              {l.label}
               {l.href === "/admin" && badge > 0 ? <span className="pip" aria-label={`${badge} en attente`} /> : null}
             </Link>
           ))}
-        </nav>
-
-        <div className="sidebar-foot">
-          <div className="stack gap-4">
-            <span className="h3">{user?.prenom}</span>
-            <span className="tiny muted">{user?.role === "admin" ? "Administrateur" : "Apprenti"}</span>
-          </div>
-          <form action="/api/deconnexion" method="post">
-            <button className="btn btn-ghost btn-sm btn-block" type="submit">
-              Se déconnecter
-            </button>
-          </form>
         </div>
-      </aside>
+      </nav>
 
-      <div className="main">
-        <div className="topbar-mobile">
-          <Link href="/parcours" className="brand">
-            <span className="brand-bar" aria-hidden="true" />
-            <span>
-              <span className="brand-name">Elec Academy</span>
-            </span>
-          </Link>
-          <span className="tiny muted">{user?.prenom}</span>
-        </div>
-
-        <main className="wrap">{children}</main>
-
-        <nav className="tabbar">
-          {links.slice(0, 5).map((l) => (
-            <Link key={l.href} href={l.href} data-active={isOn(l.href)}>
-              <span className="mark" aria-hidden="true" />
-              <span>{l.short}</span>
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </div>
+      <main className="wrap">{children}</main>
+    </>
   );
 }
