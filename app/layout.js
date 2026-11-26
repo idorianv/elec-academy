@@ -1,3 +1,7 @@
+import "@fontsource/instrument-sans/400.css";
+import "@fontsource/instrument-sans/500.css";
+import "@fontsource/instrument-sans/600.css";
+import "@fontsource/instrument-serif/400.css";
 import "./globals.css";
 
 export const metadata = {
@@ -9,7 +13,7 @@ export const metadata = {
 export const viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#15161a" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e0f10" },
   ],
   width: "device-width",
   initialScale: 1,
