@@ -5,16 +5,17 @@
 
 :root {
   --ground: #ffffff;
-  --surface: #f4f5f6;   /* zinc froid : la matière du métier, pas une crème */
-  --surface-2: #eceef0;
+  --surface: #f3f2f0;   /* pierre chaude, saturation basse : l'atelier, pas la crème */
+  --surface-2: #e9e7e3;
   --raised: #ffffff;
-  --border: #e4e6e8;
-  --rule: #edeff1;
-  --control: #d5d8db;
+  --border: #e5e0d9;
+  --rule: #eeeae5;
+  --control: #d6d0c8;
 
-  --text: #1b1d1e;
-  --muted: #5c6164;
-  --faint: #6b7073;
+  --text: #1c1a18;
+  --muted: #5d5853;
+  --faint: #6d6861;
+  --dessin: #b9b1a6;    /* le trait des dessins de vignette */
 
   --accent: #d8211a;        /* rouge Emrelec — remplis et données */
   --accent-ink: #b3140f;    /* le même en texte, 4.5:1 sur blanc */
@@ -50,17 +51,18 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #0e0f10;
-    --surface: #17191a;
-    --surface-2: #1f2223;
-    --raised: #17191a;
-    --border: #232627;
-    --rule: #1d2021;
-    --control: #3c4042;
+    --ground: #0e0e0d;
+    --surface: #191817;
+    --surface-2: #232120;
+    --raised: #191817;
+    --border: #262422;
+    --rule: #201e1d;
+    --control: #403d39;
 
-    --text: #f4f4f3;
-    --muted: #b2b6b8;
-    --faint: #949899;
+    --text: #f5f3f0;
+    --muted: #b5b0aa;
+    --faint: #97928b;
+    --dessin: #4a4641;
 
     --accent: #ef4a40;
     --accent-ink: #ff6f66;
@@ -210,7 +212,12 @@ img { max-width: 100%; }
 
 /* ------------------------------------------------------- reprendre / suite */
 
-.reprendre { display: flex; flex-direction: column; gap: 18px; min-height: 196px; justify-content: space-between; }
+.reprendre { display: flex; flex-direction: column; gap: 18px; min-height: 196px; }
+.reprendre-tete { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 640px) { .reprendre-tete { grid-template-columns: 1fr; } }
+.reprendre-pied { margin-top: auto; }
+.mod-tete { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 640px) { .mod-tete { grid-template-columns: 1fr; } }
 .reprendre .quoi { font-size: 26px; line-height: 1.2; letter-spacing: -0.012em; font-weight: 500; max-width: 22ch; }
 .reprendre .ou { font-size: var(--fs-small); color: var(--faint); }
 .reste-liste { display: flex; flex-direction: column; }
@@ -225,7 +232,19 @@ img { max-width: 100%; }
 
 /* --------------------------------------------------------- cartes modules */
 
-.cours { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 20px; height: 100%; }
+.cours { display: flex; flex-direction: column; gap: 10px; padding: 10px 10px 18px; height: 100%; }
+.cours > :not(.vignette) { padding-left: 10px; padding-right: 10px; }
+
+/* La vignette : la photo du module, ou son dessin tant qu'il n'y a pas de photo. */
+.vignette {
+  display: block; width: 100%; aspect-ratio: 16 / 9;
+  border-radius: 14px; overflow: hidden;
+  background: var(--surface-2);
+  object-fit: cover;
+}
+.vignette-dessin { display: grid; place-items: center; }
+.vignette-dessin svg { width: 68%; height: auto; max-height: 76%; }
+.cours-link-photo { position: relative; }
 .cours-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .cours-num { font-size: var(--fs-small); color: var(--faint); font-variant-numeric: tabular-nums; }
 .cours-titre { font-size: var(--fs-section); font-weight: 500; letter-spacing: -0.005em; }
@@ -233,10 +252,7 @@ img { max-width: 100%; }
   font-size: 13px; color: var(--muted); line-height: 1.45; flex: 1;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.cours-photo {
-  display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
-  border-radius: var(--radius-inner); background: var(--surface-2); margin-bottom: 2px;
-}
+
 .cours-pied { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: var(--fs-small); color: var(--faint); }
 .cours.verrouille .cours-titre, .cours.verrouille .cours-resume { color: var(--faint); }
 .cours .jauge { height: 4px; }
@@ -404,6 +420,22 @@ img { max-width: 100%; }
 }
 .ligne-mod:last-child { border-bottom: 0; }
 .ligne-mod:hover .h3 { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Les gens : chacun sa teinte pâle, stable. Identité, jamais une donnée. */
+.tete {
+  width: 30px; height: 30px; border-radius: 999px; flex: none;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 500; letter-spacing: .01em;
+}
+.tete-sm { width: 24px; height: 24px; font-size: 10px; }
+.tete-pile { display: flex; }
+.tete-pile .tete { margin-left: -8px; box-shadow: 0 0 0 2px var(--surface); }
+.tete-pile .tete:first-child { margin-left: 0; }
+
+.fil { display: flex; flex-direction: column; }
+.fil-item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.fil-item:last-child { border-bottom: 0; }
+.fil-item .corps { font-size: 13px; color: var(--muted); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 .page-head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
 .display { font-weight: 500; }
