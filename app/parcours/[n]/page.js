@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Shell from "../../_components/Shell";
 import Coche from "../../_components/Coche";
+import Vignette from "../../_components/Vignette";
 import { requireActive } from "@/lib/guard";
 import { getProgress, listProofs, getVideos } from "@/lib/store";
 import { buildState, formatDuree } from "@/lib/progress";
@@ -39,10 +40,13 @@ export default async function ModulePage({ params, searchParams }) {
         <div className="stack gap-20">
           {index === null ? (
             <>
-              <div className="stack gap-6">
-                <span className="eyebrow num">Module {String(mod.n).padStart(2, "0")} · partie {part.index} · {formatDuree(duree)}</span>
-                <h1 className="h1" style={{ fontSize: 26 }}>{mod.title}</h1>
-                <p className="lead" style={{ maxWidth: "52ch" }}>{mod.summary}</p>
+              <div className="mod-tete">
+                <Vignette photo={videos[`couverture.${mod.n}`]} module={mod.n} titre={mod.title} />
+                <div className="stack gap-6">
+                  <span className="eyebrow num">Module {String(mod.n).padStart(2, "0")} · partie {part.index} · {formatDuree(duree)}</span>
+                  <h1 className="h1" style={{ fontSize: 26 }}>{mod.title}</h1>
+                  <p className="lead">{mod.summary}</p>
+                </div>
               </div>
 
               <div className="card">
