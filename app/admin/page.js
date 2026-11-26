@@ -229,6 +229,30 @@ function EditeurVideos({ mod, videos, enregistre }) {
       <form action={saveVideosAction} className="stack gap-16">
         <input type="hidden" name="retourModule" value={mod.n} />
 
+        <div className="card stack gap-8">
+          <div className="row-between" style={{ alignItems: "flex-start" }}>
+            <div className="stack gap-4">
+              <span className="h3">Image de couverture du module</span>
+              <span className="tiny muted">
+                Une vraie photo de chantier vaut mieux qu'un fond uni. Colle l'adresse d'une image en ligne.
+              </span>
+            </div>
+            {videos[`couverture.${mod.n}`] ? <span className="pill pill-green">Image</span> : <span className="pill">Vide</span>}
+          </div>
+          <input
+            className="input"
+            type="url"
+            name={`v_couverture.${mod.n}`}
+            defaultValue={videos[`couverture.${mod.n}`] || ""}
+            placeholder="https://… .jpg"
+            spellCheck="false"
+            autoComplete="off"
+          />
+          {videos[`couverture.${mod.n}`] ? (
+            <img className="thumb" src={videos[`couverture.${mod.n}`]} alt="" style={{ maxWidth: 260 }} />
+          ) : null}
+        </div>
+
         {mod.lessons.map((l, i) => {
           const key = lessonId(mod.n, i);
           const valeur = videos[key] || "";
