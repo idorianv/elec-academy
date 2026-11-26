@@ -21,37 +21,29 @@ export default function Shell({ user, children, badge }) {
       <header className="topbar">
         <div className="topbar-in">
           <Link href="/parcours" className="brand">
-            <span className="brand-tile" aria-hidden="true">EA</span>
-            <span>
-              <span className="brand-name">Elec Academy</span>
-              <span className="brand-sub">Par Emre · Emrelec</span>
-            </span>
+            <span className="brand-tile" aria-hidden="true" />
+            <span className="brand-name">Elec Academy</span>
           </Link>
 
-          <div className="row" style={{ gap: 10 }}>
-            <span className="tiny muted" style={{ textAlign: "right", lineHeight: 1.25 }}>
-              {user?.prenom}
-              <br />
-              {user?.role === "admin" ? "Administrateur" : "Apprenti"}
-            </span>
+          <nav className="topnav" aria-label="Sections">
+            {liens.map((l) => (
+              <Link key={l.href} href={l.href} data-active={actif(l.href)}>
+                {l.label}
+                {l.href === "/admin" && badge > 0 ? (
+                  <span className="pip num" aria-label={`${badge} chantiers à corriger`}>{badge}</span>
+                ) : null}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="topright">
             <span className="avatar" aria-hidden="true">{initiales}</span>
             <form action="/api/deconnexion" method="post">
-              <button className="btn btn-sm" type="submit">Quitter</button>
+              <button className="btn btn-sm btn-ghost" type="submit">Quitter</button>
             </form>
           </div>
         </div>
       </header>
-
-      <nav className="tabs">
-        <div className="tabs-in">
-          {liens.map((l) => (
-            <Link key={l.href} href={l.href} data-active={actif(l.href)}>
-              {l.label}
-              {l.href === "/admin" && badge > 0 ? <span className="pip" aria-label={`${badge} en attente`} /> : null}
-            </Link>
-          ))}
-        </div>
-      </nav>
 
       <main className="wrap">{children}</main>
     </>
