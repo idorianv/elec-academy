@@ -8,47 +8,171 @@ import { parseVideo } from "@/lib/videos";
 
 export const dynamic = "force-dynamic";
 
+/** La leçon à reprendre : la première non cochée du module ouvert en cours. */
+function prochaine(state) {
+  for (const m of state.rows) {
+    if (!m.ouvert) break;
+    const i = m.lessons.findIndex((_, k) => !state.done.has(lessonId(m.n, k)));
+    if (i !== -1) return { mod: m, index: i, lesson: m.lessons[i] };
+  }
+  return null;
+}
+
+/** Le fait du jour : ce qui bloque, sinon ce qui reste. */
+function faitDuJour(state, mesPreuves, suite) {
+  const aRevoir = mesPreuves.find((p) => p.statut === "a_revoir");
+  if (aRevoir) {
+    return `Emre t'a renvoyé « ${aRevoir.titre} ». Corrige et renvoie la photo avant d'aller plus loin.`;
+  }
+  const m = state.courant;
+  if (m && m.enAttenteDeValidation) {
+    return `Le module ${m.n} attend ta photo de chantier. Tant qu'Emre ne l'a pas validée, le module ${m.n + 1} reste fermé.`;
+  }
+  if (suite) {
+    const reste = m.total - m.faites;
+    return `Il te reste ${reste} leçon${reste > 1 ? "s" : ""} dans le module ${m.n}, « ${m.title} ».`;
+  }
+  return "Tu as fini tout ce qui est ouvert. Emre ouvre la suite dès qu'il a validé tes chantiers.";
+}
+
 export default async function Parcours() {
   const { user, badge } = await requireActive();
   const [progress, proofs, videos] = await Promise.all([getProgress(user.id), listProofs(), getVideos()]);
   const mine = proofs.filter((p) => p.userId === user.id);
   const state = buildState(progress.done, mine);
   const reste = minutesRestantes(state.rows, state.done);
+  const suite = prochaine(state);
+  const fait = faitDuJour(state, mine, suite);
 
   return (
     <Shell user={user} badge={badge}>
-      <div className="row-between" style={{ marginBottom: 18, alignItems: "flex-end" }}>
-        <div className="stack gap-4" style={{ minWidth: 0 }}>
-          <h1 className="h1">Formation</h1>
-          <span className="small muted num">
-            {state.totalFaites} / {state.totalLecons} leçons · il te reste {formatDuree(reste)}
-          </span>
-        </div>
-        {state.courant ? (
-          <Link className="btn btn-sm" href={`/parcours/${state.courant.n}`}>
-            Reprendre au module {state.courant.n}
+      <div className="g12" style={{ rowGap: 36 }}>
+        <header className="c12 stack gap-16">
+          <div className="stack gap-10">
+            <h1 className="salut">Salut {user.prenom}.</h1>
+            <p className="salut-fait">{fait}</p>
+          </div>
+          <div className="stack gap-8" style={{ maxWidth: 640 }}>
+            <div className="jauge" role="img" aria-label={`${state.totalFaites} leçons faites sur ${state.totalLecons}`}>
+              <span style={{ width: `${state.pct}%` }} />
+            </div>
+            <div className="piste-bouts">
+              <span className="num">{state.totalFaites} / {state.totalLecons} leçons</span>
+              <span className="num">{formatDuree(reste)} de vidéo restantes</span>
+            </div>
+          </div>
+        </header>
+
+        <section className="c8 card reprendre" style={{ alignSelf: "stretch" }}>
+          {suite ? (
+            <>
+              <div className="stack gap-10">
+                <span className="ou num">
+                  Module {String(suite.mod.n).padStart(2, "0")} · leçon {suite.index + 1} sur {suite.mod.lessons.length}
+                </span>
+                <h2 className="quoi">{suite.lesson.t}</h2>
+                <p className="dim small" style={{ maxWidth: "46ch" }}>{suite.lesson.d}</p>
+              </div>
+
+              <div className="stack gap-6">
+                <span className="tiny muted">Ce qui reste dans le module {suite.mod.n}</span>
+                <ul className="reste-liste">
+                  {suite.mod.lessons.map((l, i) => ({ l, i }))
+                    .filter(({ i }) => !state.done.has(lessonId(suite.mod.n, i)))
+                    .slice(0, 3)
+                    .map(({ l, i }) => (
+                      <li key={i} data-suivant={i === suite.index}>
+                        <span className="num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                        <span className="titre">{l.t}</span>
+                        <span className="tiny muted num">{formatDuree(l.min)}</span>
+                      </li>
+                    ))}
+                </ul>
+                {suite.mod.requiertPreuve ? (
+                  <span className="tiny muted">Puis une photo de chantier à faire valider par Emre.</span>
+                ) : null}
+              </div>
+
+              <div className="row" style={{ gap: 14 }}>
+                <Link className="btn btn-primary" href={`/parcours/${suite.mod.n}?l=${suite.index}`}>
+                  Reprendre la leçon
+                </Link>
+                <span className="tiny muted num">
+                  {formatDuree(suite.lesson.min)}
+                  {parseVideo(videos[lessonId(suite.mod.n, suite.index)]) ? " · vidéo prête" : " · pas encore filmée"}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="stack gap-10">
+                <span className="ou">Rien à reprendre</span>
+                <h2 className="quoi">Tout ce qui est ouvert est coché.</h2>
+                <p className="dim small" style={{ maxWidth: "46ch" }}>
+                  La suite s'ouvre quand Emre a validé tes chantiers.
+                </p>
+              </div>
+              <Link className="btn" href="/chantiers">Voir mes chantiers</Link>
+            </>
+          )}
+        </section>
+
+        <section className="c4 card stack gap-16" style={{ alignSelf: "stretch", minHeight: 196 }} aria-labelledby="t-chantiers">
+          <h2 className="h2" id="t-chantiers">Tes chantiers</h2>
+
+          {mine.length === 0 ? (
+            <p className="empty">
+              Aucune photo envoyée. Les modules 2 et 7 en demandent une pour s'ouvrir.
+            </p>
+          ) : (
+            <>
+              <div className="mur">
+                {mine.slice(0, 3).map((p) => (
+                  <article key={p.id} className="chantier">
+                    <span className={`marque marque-${p.statut === "valide" ? "valide" : p.statut === "a_revoir" ? "revoir" : "attente"}`} aria-hidden="true" />
+                    <span className="stack gap-4" style={{ minWidth: 0 }}>
+                      <span className="small" style={{ fontWeight: 500 }}>{p.titre}</span>
+                      <span className="tiny muted">
+                        {p.statut === "valide" ? "Validé par Emre" : p.statut === "a_revoir" ? "À revoir" : "En attente de correction"}
+                        {p.moduleNumber ? ` · module ${p.moduleNumber}` : ""}
+                      </span>
+                    </span>
+                  </article>
+                ))}
+              </div>
+              <div className="mur-legende">
+                <span><i className="marque marque-valide" />Validé</span>
+                <span><i className="marque marque-attente" />En attente</span>
+                <span><i className="marque marque-revoir" />À revoir</span>
+              </div>
+            </>
+          )}
+
+          <Link className="btn btn-sm btn-block" href="/chantiers" style={{ marginTop: "auto" }}>
+            Envoyer une photo
           </Link>
-        ) : null}
-      </div>
+        </section>
 
-      <div className="jauge" style={{ marginBottom: 26 }}><span style={{ width: `${state.pct}%` }} /></div>
-
-      <div className="stack gap-32">
-        {PARTS.map((part) => {
-          const rows = state.rows.filter((r) => r.part === part.id);
-          return (
-            <section key={part.id} className="stack gap-12">
-              <div className="stack gap-4">
-                <h2 className="h2">Partie {part.index} — {part.name}</h2>
-                <p className="small muted" style={{ maxWidth: 640 }}>{part.goal}</p>
-              </div>
-
-              <div className="grid grid-3">
-                {rows.map((m) => <CarteModule key={m.n} m={m} videos={videos} />)}
-              </div>
-            </section>
-          );
-        })}
+        <div className="c12 stack gap-32">
+          {PARTS.map((part) => {
+            const rows = state.rows.filter((r) => r.part === part.id);
+            const faites = rows.filter((r) => r.complet).length;
+            return (
+              <section key={part.id} className="stack gap-16">
+                <div className="section-tete">
+                  <div className="stack gap-4" style={{ minWidth: 0 }}>
+                    <h2 className="h2">Partie {part.index} — {part.name}</h2>
+                    <p className="small dim" style={{ maxWidth: "62ch" }}>{part.goal}</p>
+                  </div>
+                  <span className="tiny muted num" style={{ flex: "none" }}>{faites} / {rows.length} modules</span>
+                </div>
+                <div className={`grid ${rows.length === 2 ? "grid-2" : "grid-3"}`}>
+                  {rows.map((m) => <CarteModule key={m.n} m={m} videos={videos} />)}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
     </Shell>
   );
@@ -57,29 +181,24 @@ export default async function Parcours() {
 function CarteModule({ m, videos }) {
   const videosPretes = m.lessons.filter((_, i) => parseVideo(videos[lessonId(m.n, i)])).length;
   const couverture = videos[`couverture.${m.n}`];
+  const duree = m.lessons.reduce((s, l) => s + (l.min || 0), 0);
 
   const contenu = (
     <>
-      <div className="cours-cover">
-        {couverture ? <img src={couverture} alt="" loading="lazy" /> : null}
-        <span className="num">Module {String(m.n).padStart(2, "0")}</span>
-        {!m.ouvert ? <span className="voile" /> : null}
-        <span className="titre">{m.title}</span>
-        {!m.ouvert ? <span className="cadenas" aria-label="Verrouillé">🔒</span> : null}
+      {couverture ? <img className="cours-photo" src={couverture} alt="" loading="lazy" /> : null}
+      <div className="cours-tete">
+        <span className="cours-num">Module {String(m.n).padStart(2, "0")}</span>
+        <Etat m={m} />
       </div>
-      <div className="cours-corps">
-        <div className="cours-titre">
-          <span className="h3">{String(m.n).padStart(2, "0")} — {m.title}</span>
-          <Etat m={m} />
-        </div>
-        <p className="small muted" style={{ flex: 1 }}>{m.summary}</p>
-        <div className="row" style={{ gap: 10 }}>
-          <div className="jauge" style={{ flex: 1 }}><span style={{ width: `${m.ouvert ? m.pct : 0}%` }} /></div>
-          <span className="jauge-txt num">{m.ouvert ? `${m.pct} %` : "—"}</span>
-        </div>
-        <span className="tiny muted">
-          {m.lessons.length} leçon{m.lessons.length > 1 ? "s" : ""}
-          {videosPretes ? ` · ${videosPretes} en vidéo` : " · vidéos à venir"}
+      <h3 className="cours-titre">{m.title}</h3>
+      <p className="cours-resume">{m.summary}</p>
+      <div className="jauge jauge-neutre" aria-hidden="true">
+        <span style={{ width: `${m.ouvert ? m.pct : 0}%` }} />
+      </div>
+      <div className="cours-pied">
+        <span className="num">{m.faites} / {m.total} leçons</span>
+        <span className="num">
+          {videosPretes === m.total ? formatDuree(duree) : `${videosPretes} sur ${m.total} filmées`}
         </span>
       </div>
     </>
@@ -90,9 +209,9 @@ function CarteModule({ m, videos }) {
 }
 
 function Etat({ m }) {
-  if (m.complet) return <span className="pill pill-green">Validé</span>;
-  if (m.enAttenteDeValidation) return <span className="pill pill-amber">Preuve attendue</span>;
   if (!m.ouvert) return <span className="pill">Verrouillé</span>;
-  if (m.faites > 0) return <span className="pill pill-red">En cours</span>;
+  if (m.complet) return <span className="pill pill-green">Validé</span>;
+  if (m.enAttenteDeValidation) return <span className="pill pill-red">Photo attendue</span>;
+  if (m.faites > 0) return <span className="pill">En cours</span>;
   return <span className="pill">À démarrer</span>;
 }
