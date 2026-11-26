@@ -13,6 +13,7 @@ import {
   addProof,
   reviewProof,
   putImage,
+  setVideos,
 } from "@/lib/store";
 
 export async function connexionAction(formData) {
@@ -119,6 +120,20 @@ export async function reviewProofAction(formData) {
   });
   revalidatePath("/admin");
   revalidatePath("/chantiers");
+}
+
+export async function saveVideosAction(formData) {
+  const user = await currentUser();
+  if (!user || user.role !== "admin") return;
+  const entries = {};
+  for (const [name, value] of formData.entries()) {
+    if (name.startsWith("v_")) entries[name.slice(2)] = value;
+  }
+  await setVideos(entries);
+  revalidatePath("/admin");
+  revalidatePath("/parcours", "layout");
+  const mod = formData.get("retourModule");
+  redirect(mod ? `/admin?videos=${mod}&ok=1` : "/admin?ok=1");
 }
 
 export async function statutAction(formData) {

@@ -354,6 +354,36 @@ ul { padding: 0; list-style: none; }
 }
 .box-on { background: var(--red); border-color: var(--red); }
 
+/* ---------------------------------------------------------------- leçons */
+
+.lecon-ligne {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 11px 2px; border-radius: var(--r);
+}
+.lecon-ligne:hover { background: var(--hover-tint); }
+.lecon-ligne .box { cursor: pointer; }
+.lecon-lien { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+
+.video-cadre {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.video-cadre iframe {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; border: 0;
+}
+
+.video-vide {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  min-height: 180px;
+  border-style: dashed;
+}
+
 .note {
   border-left: 2px solid var(--line-strong);
   padding: 2px 0 2px 12px;
