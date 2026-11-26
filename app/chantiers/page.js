@@ -16,18 +16,17 @@ export default async function Chantiers({ searchParams }) {
   return (
     <Shell user={user} badge={badge}>
       <div className="page-head">
-        <span className="eyebrow">Preuve de chantier</span>
         <h1 className="h1">Mes chantiers</h1>
-        <p className="dim small" style={{ maxWidth: 580 }}>
+        <p className="lead" style={{ maxWidth: "56ch" }}>
           Tu photographies ton travail, Emre le regarde et te dit ce qui va et ce qui ne va pas. C'est ce qui remplace
           un examen. Et au bout du parcours, cette page est ton portfolio.
         </p>
       </div>
 
-      <div className="grid grid-3" style={{ marginBottom: 28 }}>
+      <div className="strip" style={{ gridTemplateColumns: "repeat(3, 1fr)", marginBottom: 32 }}>
         <Stat label="Chantiers envoyés" value={mine.length} />
         <Stat label="Validés par Emre" value={valides} />
-        <Stat label="En attente" value={mine.filter((p) => p.statut === "attente").length} />
+        <Stat label="En attente de correction" value={mine.filter((p) => p.statut === "attente").length} agir={mine.some((p) => p.statut === "attente")} />
       </div>
 
       <section className="card stack gap-16" style={{ marginBottom: 32 }}>
@@ -94,12 +93,12 @@ export default async function Chantiers({ searchParams }) {
       <section className="stack gap-12">
         <h2 className="h2">Mon historique</h2>
         {mine.length === 0 ? (
-          <div className="card empty">Aucun chantier envoyé pour l'instant.</div>
+          <p className="empty">Aucun chantier envoyé pour l'instant.</p>
         ) : (
-          <div className="grid grid-2">
+          <div className="stack gap-12">
             {mine.map((p) => (
               <article key={p.id} className="card card-tight stack gap-12">
-                {p.imageUrl ? <img className="thumb" src={p.imageUrl} alt={p.titre} loading="lazy" /> : null}
+                {p.imageUrl ? <img className="thumb" src={p.imageUrl} alt={p.titre} loading="lazy" style={{ maxWidth: 320 }} /> : null}
                 <div className="row-between" style={{ alignItems: "flex-start" }}>
                   <div className="stack gap-4" style={{ minWidth: 0 }}>
                     <span className="h3">{p.titre}</span>
@@ -112,8 +111,8 @@ export default async function Chantiers({ searchParams }) {
                 </div>
                 {p.contexte ? <p className="small muted">{p.contexte}</p> : null}
                 {p.verdict ? (
-                  <div className="note" style={{ borderLeftColor: p.statut === "valide" ? "var(--green)" : "var(--red)" }}>
-                    <strong style={{ color: "var(--fg-2)" }}>Emre —</strong> {p.verdict}
+                  <div className={`note ${p.statut === "valide" ? "note-ok" : "note-warn"}`}>
+                    <strong>Emre —</strong> {p.verdict}
                   </div>
                 ) : null}
               </article>
@@ -125,11 +124,11 @@ export default async function Chantiers({ searchParams }) {
   );
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, agir }) {
   return (
-    <div className="card card-tight stack gap-4">
-      <span className="eyebrow">{label}</span>
-      <span className="h1 num">{value}</span>
+    <div className="stack gap-4">
+      <span className="kpi-l">{label}</span>
+      <span className="kpi-v" style={agir ? { color: "var(--accent-ink)" } : undefined}>{value}</span>
     </div>
   );
 }
@@ -137,5 +136,5 @@ function Stat({ label, value }) {
 function Statut({ statut }) {
   if (statut === "valide") return <span className="pill pill-green">Validé</span>;
   if (statut === "a_revoir") return <span className="pill pill-red">À revoir</span>;
-  return <span className="pill pill-amber">En attente</span>;
+  return <span className="pill">En attente</span>;
 }
