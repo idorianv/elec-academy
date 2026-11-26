@@ -13,7 +13,6 @@ export default async function Communaute() {
   return (
     <Shell user={user} badge={badge}>
       <div className="page-head">
-        <span className="eyebrow">Entre apprentis</span>
         <h1 className="h1">Communauté</h1>
         <p className="dim small" style={{ maxWidth: 580 }}>
           Une question qui te bloque sur chantier, une photo que tu ne comprends pas, un prix que tu n'oses pas
