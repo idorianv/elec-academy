@@ -16,6 +16,8 @@ import {
   setVideos,
   toggleLike,
   setEpingle,
+  addEvent,
+  delEvent,
 } from "@/lib/store";
 
 export async function connexionAction(formData) {
@@ -166,6 +168,37 @@ export async function saveVideosAction(formData) {
   revalidatePath("/parcours", "layout");
   const mod = formData.get("retourModule");
   redirect(mod ? `/admin?videos=${mod}&ok=1` : "/admin?ok=1");
+}
+
+export async function evenementAction(formData) {
+  const user = await currentUser();
+  if (!user || user.role !== "admin") return;
+  const titre = String(formData.get("titre") || "").trim();
+  const date = String(formData.get("date") || "").trim();
+  if (!titre || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+  await addEvent({
+    titre,
+    intervenant: formData.get("intervenant"),
+    role: formData.get("role"),
+    date,
+    heure: String(formData.get("heure") || "19:00"),
+    duree: formData.get("duree"),
+    lien: formData.get("lien"),
+    description: formData.get("description"),
+    repete: formData.get("repete"),
+    finRepetition: formData.get("finRepetition") || null,
+  });
+  revalidatePath("/calendrier");
+  revalidatePath("/communaute");
+  redirect(`/calendrier?m=${date.slice(0, 7)}`);
+}
+
+export async function supprimerEvenementAction(formData) {
+  const user = await currentUser();
+  if (!user || user.role !== "admin") return;
+  await delEvent(String(formData.get("id")));
+  revalidatePath("/calendrier");
+  revalidatePath("/communaute");
 }
 
 export async function statutAction(formData) {
