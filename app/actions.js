@@ -14,6 +14,8 @@ import {
   reviewProof,
   putImage,
   setVideos,
+  toggleLike,
+  setEpingle,
 } from "@/lib/store";
 
 export async function connexionAction(formData) {
@@ -75,12 +77,33 @@ export async function postAction(formData) {
   if (!user || user.statut !== "actif") return;
   const body = String(formData.get("body") || "").trim();
   if (!body) return;
+  let rub = String(formData.get("rubrique") || "chantier");
+  if (rub === "info" && user.role !== "admin") rub = "chantier";
   await addPost({
     userId: user.id,
     prenom: user.prenom,
+    titre: formData.get("titre"),
     body,
+    rubrique: rub,
+    lien: formData.get("lien"),
     moduleNumber: formData.get("moduleNumber") || null,
   });
+  revalidatePath("/communaute");
+  revalidatePath("/parcours");
+}
+
+/** J'aime, depuis le composant client : retour visuel immédiat. */
+export async function likeById(postId) {
+  const user = await currentUser();
+  if (!user || user.statut !== "actif") return;
+  await toggleLike(String(postId), user.id);
+  revalidatePath("/communaute");
+}
+
+export async function epinglerAction(formData) {
+  const user = await currentUser();
+  if (!user || user.role !== "admin") return;
+  await setEpingle(String(formData.get("postId")), formData.get("epingle") === "1");
   revalidatePath("/communaute");
 }
 
