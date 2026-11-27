@@ -5,16 +5,20 @@ import Jaime from "../_components/Jaime";
 import Vignette from "../_components/Vignette";
 import { postAction, replyAction, epinglerAction } from "../actions";
 import { requireActive } from "@/lib/guard";
-import { listPosts, listUsers, listProofs, getVideos } from "@/lib/store";
+import { listPosts, listUsers, listProofs, getVideos, listEvents } from "@/lib/store";
 import { MODULES } from "@/lib/content";
 import { RUBRIQUES, rubrique, depuis, miniature, classement } from "@/lib/communaute";
+import { aVenir, dansCombien } from "@/lib/agenda";
 
 export const dynamic = "force-dynamic";
 
 export default async function Communaute({ searchParams }) {
   const sp = await searchParams;
   const { user, badge } = await requireActive();
-  const [tous, users, proofs, videos] = await Promise.all([listPosts(), listUsers(), listProofs(), getVideos()]);
+  const [tous, users, proofs, videos, events] = await Promise.all([
+    listPosts(), listUsers(), listProofs(), getVideos(), listEvents(),
+  ]);
+  const prochain = aVenir(events, 1)[0] || null;
 
   const filtre = RUBRIQUES.some((r) => r.id === sp?.r) ? sp.r : null;
   const posts = filtre ? tous.filter((p) => (p.rubrique || "chantier") === filtre) : tous;
@@ -30,6 +34,16 @@ export default async function Communaute({ searchParams }) {
         <div className="stack gap-16">
           <h1 className="h1">Communauté</h1>
           <Composer user={user} />
+
+          {prochain ? (
+            <Link className="annonce" href="/calendrier">
+              <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+                <rect x="3" y="4.5" width="14" height="12" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M3 8.5h14M7 3v3M13 3v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <span><strong style={{ fontWeight: 500 }}>{prochain.titre}</strong> — {dansCombien(prochain.date)}, à {prochain.heure}</span>
+            </Link>
+          ) : null}
 
           <nav className="puces" aria-label="Rubriques">
             <Link href="/communaute" data-on={!filtre}>Tout</Link>
