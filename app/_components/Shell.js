@@ -7,6 +7,7 @@ const LIENS = [
   { href: "/parcours", label: "Formation" },
   { href: "/chantiers", label: "Mes chantiers" },
   { href: "/communaute", label: "Communauté" },
+  { href: "/calendrier", label: "Calendrier" },
   { href: "/outils", label: "Outils" },
 ];
 
